@@ -1,59 +1,58 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import styled from "styled-components";
-import { Button } from "../styles";
+import { useState } from "react";
+import { Link, NavLink, useHistory } from "react-router-dom";
+import { api } from "../api";
+import Icon from "./Icon";
 
-function NavBar({ user, setUser }) {
-  function handleLogoutClick() {
-    fetch("/logout", { method: "DELETE" }).then((r) => {
-      if (r.ok) {
-        setUser(null);
-      }
-    });
+export default function NavBar({ user, setUser }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const history = useHistory();
+  async function logout() {
+    setBusy(true);
+    try {
+      await api("/logout", { method: "DELETE" });
+      history.push("/");
+      setUser(null);
+    } catch (e) {
+      if (e.status === 401) setUser(null);
+      else setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   }
-
   return (
-    <Wrapper>
-      <Logo>
-        <Link to="/">Reciplease</Link>
-      </Logo>
-      <Nav>
-        <Button as={Link} to="/new">
-          New Recipe
-        </Button>
-        <Button variant="outline" onClick={handleLogoutClick}>
-          Logout
-        </Button>
-      </Nav>
-    </Wrapper>
+    <header className="site-header shell">
+      <Link className="brand" to="/" aria-label="Reciplease home">
+        reciplease<span>.</span>
+      </Link>
+      <nav className="main-nav" aria-label="Main navigation">
+        <NavLink exact to="/" activeClassName="active">
+          The recipe collection
+        </NavLink>
+        <NavLink to="/new" activeClassName="active">
+          Share a recipe
+        </NavLink>
+      </nav>
+      <div className="account">
+        <span className="avatar" aria-hidden="true">
+          {user.username.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="account-name">{user.username}</span>
+        <button
+          className="icon-button"
+          onClick={logout}
+          disabled={busy}
+          aria-label={busy ? "Logging out" : "Log out"}
+          title="Log out"
+        >
+          <Icon name="logout" />
+        </button>
+      </div>
+      {error && (
+        <p className="error header-error" role="alert">
+          {error}
+        </p>
+      )}
+    </header>
   );
 }
-
-const Wrapper = styled.header`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 8px;
-`;
-
-const Logo = styled.h1`
-  font-family: "Permanent Marker", cursive;
-  font-size: 3rem;
-  color: deeppink;
-  margin: 0;
-  line-height: 1;
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-`;
-
-const Nav = styled.nav`
-  display: flex;
-  gap: 4px;
-  position: absolute;
-  right: 8px;
-`;
-
-export default NavBar;

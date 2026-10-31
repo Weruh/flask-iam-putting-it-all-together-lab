@@ -64,3 +64,6 @@ __pycache__
 instance
 .vscode
 package-lock.json
+!client/package-lock.json
+client/build/
+.env
